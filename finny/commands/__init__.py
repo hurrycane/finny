@@ -1,0 +1,1 @@
+from .generate_structure import GenerateStructure

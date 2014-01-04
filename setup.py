@@ -11,9 +11,9 @@ setup(name="finny",
       author = "Bogdan Gaza",
       author_email = "bc.gaza@gmail.com",
       url = "https://github.com/hurrycane/finny",
-      description = "Finny is the act of being skinny and fat at the same time.
+      description = """Finny is the act of being skinny and fat at the same time.
                      Basic structure for an api-centry approach to Flask - that is both fat in skinny,
-                     with basic and augmented support over some popular Flask libs",
+                     with basic and augmented support over some popular Flask libs""",
       entry_points = {'console_scripts': [ 'finny = finny.runner:execute_from_cli' ]},
       test_requirements = [],
       classifiers = [

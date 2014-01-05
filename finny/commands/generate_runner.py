@@ -1,6 +1,6 @@
 from finny.command import Command
 
-class CommandRunner(Command):
+class GenerateRunner(Command):
 
   def run(self):
-    pass
+    print "runner"

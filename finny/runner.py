@@ -39,6 +39,7 @@ class Finny(CLI):
   def run_command(self):
     command = CommandFactory.get(command=self.params.command,
                                  command_type=self.params.command_type)
+    command.run()
 
   def generate_structure(self):
     path = self.params.path
@@ -92,10 +93,14 @@ def execute_from_cli():
     parser_runner = subparser_gen.add_parser('runner',
                                              help='Generate new runner')
 
+    parser_default_runner  = subparser_gen.add_parser('default-runner',
+                                                    help='Generate new runner')
+
     parser_runner.add_argument("name", help="Name of the runner")
   else:
     subparsers = f.add_subparsers(help='sub-command help')
     parser_new = subparsers.add_parser('new', help='new help')
-    parser_new.add_param("path", help="Path or name of the finny app", default=False)
+    parser_new.add_argument("path", help="Path or name of the finny app",
+                             default=False)
 
   f.run()

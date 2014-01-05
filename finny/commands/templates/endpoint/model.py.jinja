@@ -1,0 +1,9 @@
+from  import db
+
+from {{ app_name }}.{{ app_name }} import db
+
+
+class {{ name|capitalize }}(db.Model):
+
+  __tablename__ = "{{ plural_name }}"
+  id = db.Column(db.Integer, primary_key=True)

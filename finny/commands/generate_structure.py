@@ -1,7 +1,6 @@
 import os
 
 from jinja2 import Environment, PackageLoader
-
 from finny.command import Command
 
 BASE_FOLDER_TEMPLATES = [
@@ -26,11 +25,12 @@ class GenerateStructure(Command):
     self.name = name
     self.path = path
 
-  def _template(self, template_name, path):
-    pass
+  def _touch(self, filepath):
+    open(filepath, 'a').close()
 
   def _copy_templates(self, source, src, dst):
     env = Environment(loader=PackageLoader('finny.commands', 'templates/' + src))
+
     for item in source:
       template = env.get_template("%s.jinja" % item)
       output = template.render(name=self.name)
@@ -40,6 +40,8 @@ class GenerateStructure(Command):
 
       if not os.path.exists(dirname):
         os.makedirs(dirname)
+
+      self._touch(dirname + "/__init__.py")
 
       with open(path, "w+") as f:
         f.write(output)

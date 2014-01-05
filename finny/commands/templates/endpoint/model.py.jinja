@@ -1,4 +1,4 @@
-from {{ app_name }}.{{ app_name }} import db
+from {{ app_name }}.boot import db
 
 class {{ name|capitalize }}(db.Model):
 

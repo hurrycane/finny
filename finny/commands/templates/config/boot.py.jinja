@@ -2,11 +2,17 @@ from flask import Flask
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.migrate import Migrate
 
+from finny.boot import load_runner, load_environment_config
+
 db = SQLAlchemy()
 migrate = Migrate()
 
-def create_app():
+def create_app(env, runner):
   app = Flask(__name__)
+
+  load_environment_config(app, env)
+  load_runner(app, runner)
+
   db.init_app(app)
   migrate.init_app(app, db)
 

@@ -21,9 +21,8 @@ CONFIG_TEMPLATES = [
 
 class GenerateStructure(Command):
 
-  def __init__(self, name, path):
-    self.name = name
-    self.path = path
+  def __init__(self):
+    pass
 
   def _touch(self, filepath):
     open(filepath, 'a').close()
@@ -46,7 +45,10 @@ class GenerateStructure(Command):
       with open(path, "w+") as f:
         f.write(output)
 
-  def run(self):
+  def run(self, name, path):
+    self.path = path
+    self.name = name
+
     os.makedirs(self.path, 0755)
 
     self.env = Environment(loader=PackageLoader('finny.commands', 'templates'))

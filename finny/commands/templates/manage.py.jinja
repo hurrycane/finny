@@ -1,11 +1,15 @@
 #!/usr/bin/env python
 
+from functools import partial
+
 from flask.ext.script import Manager
 from flask.ext.migrate import Migrate, MigrateCommand
 
 from {{ name }}.boot import create_app
 
 if __name__ == "__main__":
+  create_app = partial(create_app, name="{{ name }}")
+
   manager = Manager(create_app)
 
   manager.add_option('--env', dest='env', required=False, default="development")

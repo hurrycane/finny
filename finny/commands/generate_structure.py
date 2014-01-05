@@ -50,6 +50,8 @@ class GenerateStructure(Command):
     self.name = name
 
     os.makedirs(self.path, 0755)
+    os.makedirs(self.path + "/resources", 0755)
+    self._touch(self.path + "/resources/__init__.py")
 
     self.env = Environment(loader=PackageLoader('finny.commands', 'templates'))
 

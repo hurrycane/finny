@@ -15,3 +15,6 @@ class CommandFactory(object):
 
       if command_type == "endpoint":
         return GenerateEndpoint()
+
+    raise NotImplementedError("The command with command=%s and command_type=%s" \
+                              % (command, command_type))

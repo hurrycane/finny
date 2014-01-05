@@ -1,11 +1,31 @@
 import os
 import sys
+import argparse
 
-from finny.commands import GenerateStructure
+from finny.commands import CommandFactory
 
-import cli.app
+STRUCTURE_REPRESENTATIVES = [ "manage.py", "__init__.py" ]
 
-class Finny(cli.app.CommandLineApp):
+class CLI(object):
+
+  def __init__(self):
+    self.parser = argparse.ArgumentParser(description='Finny.')
+    self.subparsers = self.parser.add_subparsers(help='sub-command help')
+
+  def add_subparsers(self, *args, **kwargs):
+    return self.parser.add_subparsers(*args, **kwargs)
+
+  def add_param(self, *args, **kwargs):
+    return self.parser.add_argument(*args, **kwargs)
+
+  def add_argument(self, *args, **kwargs):
+    return self.parser.add_argument(*args, **kwargs)
+
+  def run(self):
+    self.params = self.parser.parse_args()
+    self.main()
+
+class Finny(CLI):
   """
   Finny entry point
   """
@@ -14,8 +34,11 @@ class Finny(cli.app.CommandLineApp):
 
     self.is_structure = is_structure
 
+    self.parser = argparse.ArgumentParser(description='Process some integers.')
+
   def run_command(self):
-    pass
+    command = CommandFactory.get(command=self.params.command,
+                                 command_type=self.params.command_type)
 
   def generate_structure(self):
     path = self.params.path
@@ -28,16 +51,26 @@ class Finny(cli.app.CommandLineApp):
     if os.path.exists(path):
       raise AttributeError("Path %s is already present." % path)
 
-    GenerateStructure(name, path).run()
+    CommandFactory.get(command="GenerateStructure").run(name, path)
 
   def main(self):
-
     if self.is_structure:
       self.run_command()
     else:
       self.generate_structure()
 
 def detect_current_structure():
+  current_path = os.getcwd()
+
+  reprensentatives = [ os.path.exists(current_path + "/" + item)
+                      for item in STRUCTURE_REPRESENTATIVES ]
+
+  if all(reprensentatives):
+    finny_app = current_path.split("/")[-1]
+
+    if os.path.exists(current_path + "/" + finny_app):
+      return True
+
   return False
 
 def execute_from_cli():
@@ -47,9 +80,22 @@ def execute_from_cli():
   f = Finny(is_structure)
 
   if is_structure:
-    Finny.add_param("name", help="Run command in the ", choices=["new"])
+    subparsers = f.add_subparsers(dest="command",
+                                  help='Commands for a present finny app')
+
+    parser_generate = subparsers.add_parser('generate',
+                                        help='Generate a number of constructs')
+
+    subparser_gen = parser_generate.add_subparsers(dest="command_type",
+                                        help='Generate a number of constructs')
+
+    parser_runner = subparser_gen.add_parser('runner',
+                                             help='Generate new runner')
+
+    parser_runner.add_argument("name", help="Name of the runner")
   else:
-    f.add_param("command", help="Generate new finny based flask structure", choices=["new"])
-    f.add_param("path", help="Path or name of the finny app", default=False)
+    subparsers = f.add_subparsers(help='sub-command help')
+    parser_new = subparsers.add_parser('new', help='new help')
+    parser_new.add_param("path", help="Path or name of the finny app", default=False)
 
   f.run()

@@ -1,4 +1,9 @@
 import os
+import sys 
+
+import json
+
+from importlib import import_module
 
 from jinja2 import Environment, PackageLoader
 from finny.command import Command
@@ -20,12 +25,24 @@ class GenerateEndpoint(Command):
 
     self.app_name = cwd.split("/")[-1]
 
-    endpoint_path = cwd + "/" + params.name
+    endpoint_path = cwd + "/resources/" + params.name
     # create folder for endpoint
-    os.makedirs(cwd + "/" + params.name)
+    os.makedirs(endpoint_path)
 
     # copy templates over
     self._copy_templates([ "api.py", "model.py"], "endpoint", endpoint_path)
+
+    self.read_default_runner()
+
+  def read_default_runner(self):
+    cwd = os.getcwd() + "/resources"
+
+    endpoints = [ name for name in os.listdir(cwd) if os.path.isdir(os.path.join(cwd, name)) ]
+
+    cwd = os.getcwd()
+
+    with open("%s/%s/runners/default.py" % (cwd, self.app_name), "w+") as f:
+      f.write("ENDPOINTS = %s" % json.dumps(endpoints))
 
   def _copy_templates(self, source, src, dst):
     env = Environment(loader=PackageLoader('finny.commands', 'templates/' + src))

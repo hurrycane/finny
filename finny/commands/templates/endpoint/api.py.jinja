@@ -1,0 +1,8 @@
+from finny.views import RestfulView
+
+from {{ app_name }}.{{ app_name }} import db
+from {{ app_name }}.{{ name }}.model import {{ name|capitalize }}
+
+
+class {{ plural_name|capitalize }}View(RestfulView):
+  model = {{ name|capitalize }}

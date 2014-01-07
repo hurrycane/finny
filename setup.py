@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-requires = [ "pyCLI>=2.0.3" ]
+requires = [ "" ]
 
 setup(name="finny",
       version="0.1",

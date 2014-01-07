@@ -7,16 +7,24 @@ from flask import url_for
 
 STAGES = [ "development", "test", "production" ]
 
+def _pluralize(name):
+  pluralize = inflect.engine()
+  names = [ i for i in name.split("_") ]
+  names[-1] = pluralize.plural(names[-1])
+
+  plural_name = "".join([ n.capitalize() for n in names])
+  return plural_name
+
 def load_runner(name, app, runner):
   pluralize = inflect.engine()
   # loads the runner that has a list of endpoints
   module = import_module("%s.runners.%s" % (name, runner))
 
   for endpoint in module.ENDPOINTS:
-    endpoint_plural = pluralize.plural(endpoint)
-
     module = import_module("resources.%s.api" % endpoint)
-    klass = getattr(module, "%sView" % endpoint_plural.capitalize())
+
+    plural_name = _pluralize(endpoint)
+    klass = getattr(module, "%sView" % plural_name)
     # TODO: Think at something better that this hardcoded prefix
     klass.register(app, route_prefix='/v1.0/')
 

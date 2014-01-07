@@ -4,5 +4,6 @@ from {{ app_name }}.boot import db
 from resources.{{ original_name }}.model import {{ name }}
 
 class {{ plural_name }}View(RestfulView):
+  route_base = "{{ plural_orig_name }}"
   model = {{ name }}
   db = db

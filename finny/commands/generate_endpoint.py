@@ -9,6 +9,7 @@ from jinja2 import Environment, PackageLoader
 from finny.command import Command
 
 import inflect
+import imp
 
 class GenerateEndpoint(Command):
 
@@ -23,7 +24,13 @@ class GenerateEndpoint(Command):
 
     cwd = os.getcwd()
 
-    self.app_name = cwd.split("/")[-1]
+    config = imp.new_module('config')
+    config.__file__ = "config"
+    # loads the configuration file
+    with open(cwd + "/__init__.py") as config_file:
+      exec(compile(config_file.read(), "config", 'exec'), config.__dict__)
+
+    self.app_name = config.__APP__
 
     endpoint_path = cwd + "/resources/" + params.name
     # create folder for endpoint

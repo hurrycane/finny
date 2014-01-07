@@ -2,6 +2,8 @@ import os
 import sys
 import argparse
 
+import imp
+
 from finny.commands import CommandFactory
 
 STRUCTURE_REPRESENTATIVES = [ "manage.py", "__init__.py" ]
@@ -67,7 +69,13 @@ def detect_current_structure():
                       for item in STRUCTURE_REPRESENTATIVES ]
 
   if all(reprensentatives):
-    finny_app = current_path.split("/")[-1]
+    config = imp.new_module('config')
+    config.__file__ = "config"
+    # loads the configuration file
+    with open(current_path + "/__init__.py") as config_file:
+      exec(compile(config_file.read(), "config", 'exec'), config.__dict__)
+
+    finny_app = config.__APP__
 
     if os.path.exists(current_path + "/" + finny_app):
       return True

@@ -7,7 +7,8 @@ BASE_FOLDER_TEMPLATES = [
   ".gitignore",
   "requirements.txt",
   "README.md",
-  "manage.py"
+  "manage.py",
+  "__init__.py"
 ]
 
 CONFIG_INITIALIZERS_TEMPLATES = [ "app.py" ]
@@ -25,7 +26,8 @@ class GenerateStructure(Command):
     pass
 
   def _touch(self, filepath):
-    open(filepath, 'a').close()
+    if not os.path.exists(filepath):
+      open(filepath, 'a').close()
 
   def _copy_templates(self, source, src, dst):
     env = Environment(loader=PackageLoader('finny.commands', 'templates/' + src))

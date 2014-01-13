@@ -5,6 +5,8 @@ import inflect
 
 from flask import url_for
 
+from finny.views import ResourceBuilder
+
 STAGES = [ "development", "test", "production" ]
 
 def _pluralize(name):
@@ -16,7 +18,9 @@ def _pluralize(name):
   return plural_name
 
 def load_runner(name, app, runner):
-  pluralize = inflect.engine()
+  """
+  For each endpoint in the runner load the class
+  """
   # loads the runner that has a list of endpoints
   module = import_module("%s.runners.%s" % (name, runner))
 
@@ -26,7 +30,9 @@ def load_runner(name, app, runner):
     plural_name = _pluralize(endpoint)
     klass = getattr(module, "%sView" % plural_name)
     # TODO: Think at something better that this hardcoded prefix
-    klass.register(app, route_prefix='/v1.0/')
+    klass.register()
+
+  ResourceBuilder().build(app)
 
   # TODO: Remove this HACK!
   @app.errorhandler(404)

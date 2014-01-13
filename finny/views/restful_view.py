@@ -1,10 +1,7 @@
 from functools import wraps
-
 import json
 
 from flask import Response, request
-from flask.ext.classy import FlaskView
-
 from sqlalchemy.ext.declarative import DeclarativeMeta
 
 from finny.exceptions import HttpNotFound
@@ -43,94 +40,113 @@ def serialize(func):
 
   return endpoint_method
 
-class BaseView(FlaskView):
-  decorators = [serialize]
+import inspect
+from functools import partial
 
-class RESTView(BaseView):
+class ResourceBuilder(object):
 
-  def get(self, entity_id):
-    if(hasattr(self, "show")):
-      return self.show(entity_id)
+  DAG = {}
+
+  @classmethod
+  def register(cls, klass):
+    parent_klass = None
+    if hasattr(klass, "__parent__"):
+      parent_klass = klass.__parent__
+
+    cls.DAG[klass] = parent_klass
+
+  def __init__(self):
+    pass
+
+  def _get_parent_klasses(self, klass):
+    def _get_parent(klass):
+      if self.DAG[klass] == None:
+        return []
+      else:
+        parent = self.DAG[klass]
+        return [ parent ] + _get_parent(parent)
+
+    return _get_parent(klass)
+
+  def _resource_name(self, klass):
+
+    if hasattr(klass, "route_base"):
+      resource_name = klass.route_base
     else:
-      raise NotImplemented("No method found with the name show")
+      resource_name = klass.__name__.lower()
+      pos = resource_name.find("view")
 
-  def post(self):
-    if(hasattr(self, "create")):
-      return self.create()
-    else:
-      raise NotImplemented("No method found with the name create")
+      if pos == -1:
+        raise AttributeError("Resource %s doesn't end in View" % resource_name)
 
-  def put(self, entity_id):
-    if(hasattr(self, "update")):
-      return self.update(entity_id)
-    else:
-      raise NotImplemented("No method found with the name update")
+      resource_name = resource_name[:pos]
 
-  def patch(self):
-    if(hasattr(self, "update")):
-      return self.update(entity_id)
-    else:
-      raise NotImplemented("No method found with the name update")
+    return resource_name
 
-class RestfulView(RESTView):
-  model = None
-  __exclude__ = []
-  db = None
+  def _make_show_url(self, klass):
+    resource_name = self._resource_name(klass)
+    return "/%s/<%s_id>" % (resource_name, resource_name)
 
-  def create(self):
-    data = request.data
+  def _add_route(self, klass, url, method_name, http_verbs):
+    methods = dict(inspect.getmembers(klass, predicate=inspect.ismethod))
 
-    if data == None or len(data) == 0:
-      data = "{}"
+    def call_method(method_name):
+      instance = klass()
+      method = getattr(instance, method_name)
+      return method
 
-    data = json.loads(data)
-    item = self.model(**data)
+    if hasattr(klass, method_name) and method_name in methods:
+      self.app.add_url_rule(url,
+                            "%s::%s" % (klass.__name__, method_name),
+                            call_method(method_name),
+                            methods=http_verbs)
+      setattr(klass, method_name, call_method(method_name))
 
-    #if not item.valid:
-    #  raise HttpBadRequest(item.errors)
+  def _add_nested_route(self, app, klass, parent_klasses):
+    """
+    resource_name
 
-    self.db.session.add(item)
-    self.db.session.commit()
+    make_show_url(klass, name)
+    """
 
-    return item
+    base_url = [ self._make_show_url(parent) for parent in reversed(parent_klasses) ]
+    base_url = "".join(base_url)
 
-  def index(self):
-    items = self.model.query.all()
-    return items
+    resource_name = self._resource_name(klass)
+    resource_base = "%s/%s" % (base_url, resource_name)
 
-  def show(self, entity_id):
-    item = self.model.query.get(entity_id)
+    self._add_restful_routes(app, klass, resource_name, resource_base)
 
-    if item:
-      return item
-    else:
-      raise HttpNotFound({'error': 'Item not found in database'})
+  def _add_restful_routes(self, app, klass, resource_name, resource_base):
+    self.app = app
 
-  def update(self, entity_id):
-    data = json.loads(request.data)
-    item = self.model.query.get(entity_id)
+    self._add_route(klass, resource_base, "index", ["GET"])
+    self._add_route(klass, resource_base, "create", ["POST"])
+    self._add_route(klass, resource_base + "/<%s_id>" % resource_name, "show", ["GET"])
+    self._add_route(klass, resource_base + "/<%s_id>" % resource_name, "update", ["PUT"])
+    self._add_route(klass, resource_base + "/<%s_id>" % resource_name, "delete", ["DELETE"])
 
-    if not item:
-      raise HttpNotFound({'error': 'Item not found in database'})
+  def _add_normal_route(self, app, klass):
+    methods = dict(inspect.getmembers(klass, predicate=inspect.ismethod))
 
-    for field in data:
-      if hasattr(item, field):
-        setattr(item, field, data[field])
+    resource_name = self._resource_name(klass)
+    resource_base = "/" + resource_name
 
-    #if not item.valid:
-    #  raise HttpBadRequest(item.errors)
+    self._add_restful_routes(app, klass, resource_name, resource_base)
 
-    self.db.session.add(item)
-    self.db.session.commit()
+  def build(self, app):
+    for klass, klass_parent in self.DAG.iteritems():
+      if klass_parent:
+        parent_klasses = self._get_parent_klasses(klass)
+        self._add_nested_route(app, klass, parent_klasses)
+      else:
+        self._add_normal_route(app, klass)
 
-    return item
+class Resource(object):
 
-  def delete(self, entity_id):
-    item = self.model.query.get(entity_id)
+  @classmethod
+  def register(cls):
+    ResourceBuilder.register(cls)
 
-    if item:
-      self.db.session.delete(item)
-      self.db.session.commit()
-      return {'success': 'Item was deleted!'}
-    else:
-      raise HttpNotFound({'error': 'Item not found in database'})
+class ModelResource(Resource):
+  pass

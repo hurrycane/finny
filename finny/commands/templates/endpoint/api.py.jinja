@@ -1,9 +1,9 @@
-from finny.views import Resource
+from finny.views import ModelResource
 
 from {{ app_name }}.boot import db
 from resources.{{ original_name }}.model import {{ name }}
 
-class {{ plural_name }}View(Resource):
+class {{ plural_name }}View(ModelResource):
   route_base = "{{ plural_orig_name }}"
   model = {{ name }}
   db = db

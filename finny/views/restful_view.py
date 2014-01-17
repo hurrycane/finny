@@ -172,6 +172,8 @@ class ResourceBuilder(object):
 
 class Resource(object):
 
+  decorators = [ serialize ]
+
   @classmethod
   def register(cls):
     ResourceBuilder.register(cls)

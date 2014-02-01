@@ -9,3 +9,13 @@ Inspired by work done by:
 * [Calin Don](https://github.com/calind)
 
 both part of the [PressLabs](https://github.com/PressLabs) Team.
+
+## Usage
+
+```
+finny new *app_name*
+
+cd app_name
+
+finny endpoint resource_name # => create resource
+```

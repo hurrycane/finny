@@ -99,10 +99,13 @@ class ResourceBuilder(object):
     engine = inflect.engine()
 
     split_name = resource_name.split("_")
-    split_name[-1] = engine.singular_noun(split_name[-1])
+    entity_id  = engine.singular_noun(split_name[-1])
+
+    if not entity_id:
+      entity_id = split_name[-1]
 
     # ID must be singular
-    return "/%s/<%s_id>" % (resource_name, "_".join(split_name))
+    return "/%s/<%s_id>" % (resource_name, entity_id)
 
   def _add_route(self, klass, url, method_name, http_verbs):
     methods = dict(inspect.getmembers(klass, predicate=inspect.ismethod))
@@ -145,8 +148,10 @@ class ResourceBuilder(object):
 
     engine = inflect.engine()
     split_name = resource_name.split("_")
-    split_name[-1] = engine.singular_noun(split_name[-1])
-    entity_id = "_".join(split_name)
+
+    entity_id = engine.singular_noun(split_name[-1])
+    if not entity_id:
+      entity_id = split_name[-1]
 
     self._add_route(klass, resource_base, "index", ["GET"])
     self._add_route(klass, resource_base, "create", ["POST"])
@@ -219,12 +224,15 @@ class ModelResource(Resource):
       name = p.__name__.lower()
       pos = name.find("view")
       arg = name[:pos]
-      arg = arg.split("_")
-      arg[-1] = engine.singular_noun(arg[-1])
-      arg = "_".join(arg)
 
-      if ("%s_id" % arg) in kwargs:
-        args[p.model] = "%s_id" % arg
+      arg = arg.split("_")
+      entity_id = engine.singular_noun(arg[-1])
+
+      if not entity_id:
+        entity_id = arg[-1]
+
+      if ("%s_id" % entity_id) in kwargs:
+        args[p.model] = "%s_id" % entity_id
 
     return args
 

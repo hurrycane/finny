@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 requires = [ "pyyaml>=3.10" ]
 
 setup(name="finny",
-      version="0.2".,
+      version="0.2",
       platforms='any',
       packages = find_packages(),
       include_package_data=True,

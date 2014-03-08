@@ -30,4 +30,4 @@ class ResourceTest(TestCase):
     create_app = boot_module.create_app
     self.db = boot_module.db
 
-    return create_app("andromeda_api", "development", "default")
+    return create_app("andromeda_api", "test", "default")

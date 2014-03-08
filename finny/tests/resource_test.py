@@ -1,18 +1,34 @@
 import os
-
 import imp
 from importlib import import_module
 
 from flask.ext.testing import TestCase
 
+from alembic import command
+from alembic.config import Config as AlembicConfig
+
+class Config(AlembicConfig):
+  def get_template_directory(self):
+    package_dir = os.path.abspath(os.path.dirname(__file__))
+    return os.path.join(package_dir, 'templates')
+
 class ResourceTest(TestCase):
 
   def setUp(self):
-    self.db.create_all()
+    command.upgrade(self.config, "head")
 
   def tearDown(self):
     self.db.session.remove()
     self.db.drop_all()
+
+    self.db.engine.execute("drop schema public cascade; create schema public;")
+
+  def _get_config(self, current_app):
+    directory = current_app.extensions['migrate'].directory
+
+    config = Config(os.path.join(directory, 'alembic.ini'))
+    config.set_main_option('script_location', directory)
+    return config
 
   def create_app(self):
     current_path = os.getcwd()
@@ -30,4 +46,8 @@ class ResourceTest(TestCase):
     create_app = boot_module.create_app
     self.db = boot_module.db
 
-    return create_app("andromeda_api", "test", "default")
+    current_app = create_app("andromeda_api", "test", "default")
+
+    self.config = self._get_config(current_app)
+
+    return current_app

@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-requires = [ "" ]
+requires = [ "pyyaml>=3.10" ]
 
 setup(name="finny",
       version="0.1",

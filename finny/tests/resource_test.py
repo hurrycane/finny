@@ -14,6 +14,8 @@ class Config(AlembicConfig):
 
 class ResourceTest(TestCase):
 
+  finny_app = None
+
   def setUp(self):
     command.upgrade(self.config, "head")
 
@@ -31,6 +33,9 @@ class ResourceTest(TestCase):
     return config
 
   def create_app(self):
+    if ResourceTest.finny_app:
+      return ResourceTest.finny_app
+
     current_path = os.getcwd()
 
     config = imp.new_module('config')
@@ -44,10 +49,11 @@ class ResourceTest(TestCase):
     boot_module = import_module("%s.boot" % finny_app)
 
     create_app = boot_module.create_app
-    self.db = boot_module.db
+    ResourceTest.db = boot_module.db
 
     current_app = create_app("andromeda_api", "test", "default")
 
-    self.config = self._get_config(current_app)
+    ResourceTest.config = self._get_config(current_app)
+    ResourceTest.finny_app = current_app
 
     return current_app

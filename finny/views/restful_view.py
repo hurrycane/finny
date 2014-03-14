@@ -1,3 +1,5 @@
+import sys
+
 import json
 from collections import OrderedDict
 from functools import wraps
@@ -10,6 +12,15 @@ from sqlalchemy.orm import class_mapper
 from sqlalchemy.ext.declarative import DeclarativeMeta
 
 from finny.exceptions import HttpNotFound
+
+#
+#
+
+import logging
+import logging.config
+
+#logging.config.fileConfig('logging.conf')
+#logger = logging.getLogger('finny')
 
 class AlchemyEncoder(json.JSONEncoder):
 
@@ -44,6 +55,22 @@ def serialize(func):
     return Response(json.dumps(response, cls=AlchemyEncoder),  mimetype='application/json')
 
   return endpoint_method
+
+def interceptor(func):
+  @wraps(func)
+  def intercept(*args, **kwargs):
+    try:
+      response = func(*args, **kwargs)
+      print "Response for", request, response
+    except:
+      t, v, tb = sys.exc_info()
+      print request, "Exception"
+
+      raise t, v, tb
+
+    return response
+
+  return intercept
 
 import inspect
 from functools import partial
@@ -177,7 +204,7 @@ class ResourceBuilder(object):
 
 class Resource(object):
 
-  decorators = [ serialize ]
+  decorators = [ interceptor, serialize ]
 
   @classmethod
   def register(cls):
@@ -189,7 +216,7 @@ class ModelResource(Resource):
   Is nested than build the resources first
   """
 
-  decorators = [ serialize ]
+  decorators = [ interceptor, serialize ]
 
   def index(self, **kwargs):
     if self.__is_nested():

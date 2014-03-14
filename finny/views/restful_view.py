@@ -17,10 +17,8 @@ from finny.exceptions import HttpNotFound
 #
 
 import logging
-import logging.config
-
-#logging.config.fileConfig('logging.conf')
-#logger = logging.getLogger('finny')
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 class AlchemyEncoder(json.JSONEncoder):
 
@@ -61,10 +59,10 @@ def interceptor(func):
   def intercept(*args, **kwargs):
     try:
       response = func(*args, **kwargs)
-      print "Response for", request, response
+      logger.debug("Request %s with respones %s", request, response)
     except:
       t, v, tb = sys.exc_info()
-      print request, "Exception"
+      logger.debug("Request %s with EXCEPTION", request)
 
       raise t, v, tb
 

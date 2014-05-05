@@ -178,11 +178,20 @@ class ResourceBuilder(object):
     if not entity_id:
       entity_id = split_name[-1]
 
-    self._add_route(klass, resource_base, "index", ["GET"])
-    self._add_route(klass, resource_base, "create", ["POST"])
-    self._add_route(klass, resource_base + "/<%s_id>" % entity_id, "show", ["GET"])
-    self._add_route(klass, resource_base + "/<%s_id>" % entity_id, "update", ["PUT"])
-    self._add_route(klass, resource_base + "/<%s_id>" % entity_id, "delete", ["DELETE"])
+    if "index" not in klass.except_methods:
+      self._add_route(klass, resource_base, "index", ["GET"])
+
+    if "create" not in klass.except_methods:
+      self._add_route(klass, resource_base, "create", ["POST"])
+
+    if "show" not in klass.except_methods:
+      self._add_route(klass, resource_base + "/<%s_id>" % entity_id, "show", ["GET"])
+
+    if "update" not in klass.except_methods:
+      self._add_route(klass, resource_base + "/<%s_id>" % entity_id, "update", ["PUT"])
+
+    if "delete" not in klass.except_methods:
+      self._add_route(klass, resource_base + "/<%s_id>" % entity_id, "delete", ["DELETE"])
 
   def _add_normal_route(self, app, klass):
     methods = dict(inspect.getmembers(klass, predicate=inspect.ismethod))

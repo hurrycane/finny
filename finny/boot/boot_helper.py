@@ -25,10 +25,18 @@ def load_runner(name, app, runner):
   module = import_module("%s.runners.%s" % (name, runner))
 
   for endpoint in module.ENDPOINTS:
-    module = import_module("resources.%s.api" % endpoint)
+    endpoint_name = endpoint
+    except_methods = []
 
-    plural_name = _pluralize(endpoint)
+    if type(endpoint) == dict:
+      endpoint_name = endpoint["view"]
+      except_methods = endpoint["except"]
+
+    module = import_module("resources.%s.api" % endpoint_name)
+    plural_name = _pluralize(endpoint_name)
     klass = getattr(module, "%sView" % plural_name)
+
+    klass.except_methods = except_methods
     # TODO: Think at something better that this hardcoded prefix
     klass.register()
 

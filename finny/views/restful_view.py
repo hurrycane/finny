@@ -16,10 +16,6 @@ from finny.exceptions import HttpNotFound
 #
 #
 
-import logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
-
 class AlchemyEncoder(json.JSONEncoder):
 
   def _encode_declarative_meta(self, obj):
@@ -53,22 +49,6 @@ def serialize(func):
     return Response(json.dumps(response, cls=AlchemyEncoder),  mimetype='application/json')
 
   return endpoint_method
-
-def interceptor(func):
-  @wraps(func)
-  def intercept(*args, **kwargs):
-    try:
-      response = func(*args, **kwargs)
-      logger.debug("Request %s with respones %s", request, response)
-    except:
-      t, v, tb = sys.exc_info()
-      logger.debug("Request %s with EXCEPTION", request)
-
-      raise t, v, tb
-
-    return response
-
-  return intercept
 
 import inspect
 from functools import partial
@@ -211,7 +191,7 @@ class ResourceBuilder(object):
 
 class Resource(object):
 
-  decorators = [ interceptor, serialize ]
+  decorators = [ serialize ]
 
   @classmethod
   def register(cls):
@@ -223,7 +203,7 @@ class ModelResource(Resource):
   Is nested than build the resources first
   """
 
-  decorators = [ interceptor, serialize ]
+  decorators = [ serialize ]
 
   def index(self, **kwargs):
     if self.__is_nested():

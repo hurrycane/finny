@@ -42,24 +42,26 @@ def load_runner(name, app, runner):
 
   ResourceBuilder().build(app)
 
-  # TODO: Remove this HACK!
-  @app.errorhandler(404)
-  def page_not_found(e):
-    import urllib
-    output = ""
-    for rule in app.url_map.iter_rules():
+  if runner == "default":
 
-        options = {}
-        for arg in rule.arguments:
-            options[arg] = "[{0}]".format(arg)
+    # TODO: Remove this HACK!
+    @app.errorhandler(404)
+    def page_not_found(e):
+      import urllib
+      output = ""
+      for rule in app.url_map.iter_rules():
 
-        methods = ','.join(rule.methods)
-        url = url_for(rule.endpoint, **options)
-        line = urllib.unquote("{:50s} {:20s} {}".format(rule.endpoint, methods, url))
-        line = "<strong>%s</strong> %s %s" % (rule.endpoint, methods, urllib.unquote(url))
-        output += "<li>" + line + "</li>"
+          options = {}
+          for arg in rule.arguments:
+              options[arg] = "[{0}]".format(arg)
 
-    return """
+          methods = ','.join(rule.methods)
+          url = url_for(rule.endpoint, **options)
+          line = urllib.unquote("{:50s} {:20s} {}".format(rule.endpoint, methods, url))
+          line = "<strong>%s</strong> %s %s" % (rule.endpoint, methods, urllib.unquote(url))
+          output += "<li>" + line + "</li>"
+
+      return """
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
 <title>404 Not Found</title>
 <h1>Not Found</h1>
@@ -69,7 +71,7 @@ def load_runner(name, app, runner):
 <ul>
 %s
 </ul>
-    """ % output, 404
+      """ % output, 404
 
 def load_environment_config(app, env):
   if env not in STAGES:

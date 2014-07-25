@@ -13,6 +13,8 @@ from sqlalchemy.ext.declarative import DeclarativeMeta
 
 from finny.exceptions import HttpNotFound
 
+from flask import current_app
+
 #
 #
 
@@ -47,6 +49,37 @@ def serialize(func):
     response = func(*args, **kwargs)
 
     return Response(json.dumps(response, cls=AlchemyEncoder),  mimetype='application/json')
+
+  return endpoint_method
+
+class KaBoomError(Exception):
+  status_code = 500
+
+  def __init__(self, message, status_code=None, payload=None):
+    Exception.__init__(self)
+    self.message = message
+    if status_code is not None:
+      self.status_code = status_code
+    self.payload = payload
+
+  def to_dict(self):
+    rv = dict(self.payload or ())
+    rv['message'] = self.message
+    return rv
+
+def catch_it_all(func):
+  @wraps(func)
+  def endpoint_method(*args, **kwargs):
+    if "DISABLED_ERROR_HANDLING" not in current_app.config:
+      try:
+        response = func(*args, **kwargs)
+      except:
+        current_app.config["SSENTRY"].captureException()
+        raise KaBoomError("An error occured")
+    else:
+      response = func(*args, **kwargs)
+
+    return response
 
   return endpoint_method
 
@@ -191,7 +224,7 @@ class ResourceBuilder(object):
 
 class Resource(object):
 
-  decorators = [ serialize ]
+  decorators = [ serialize, catch_it_all ]
 
   @classmethod
   def register(cls):
@@ -203,7 +236,7 @@ class ModelResource(Resource):
   Is nested than build the resources first
   """
 
-  decorators = [ serialize ]
+  decorators = [ serialize, catch_it_all ]
 
   def index(self, **kwargs):
     if self.__is_nested():

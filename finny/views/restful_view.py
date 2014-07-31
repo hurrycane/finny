@@ -176,7 +176,7 @@ class ResourceBuilder(object):
     def update_delete_bypass(ctx, **kwargs):
       http_verb = request.args.get('method')
 
-      if http_verb == "update":
+      if http_verb == "put":
         return ctx._orig_update(**kwargs)
       elif http_verb == "delete":
         return ctx._orig_delete(**kwargs)

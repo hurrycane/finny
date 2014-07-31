@@ -14,6 +14,7 @@ from sqlalchemy.ext.declarative import DeclarativeMeta
 from finny.exceptions import HttpNotFound
 
 from flask import current_app
+from flask import request
 
 #
 #
@@ -164,7 +165,48 @@ class ResourceBuilder(object):
                             "%s::%s" % (klass.__name__, method_name),
                             call_method(method_name),
                             methods=http_verbs)
+      # TODO: Why this?
+      setattr(klass, "_orig_%s" % method_name, getattr(klass, method_name))
       setattr(klass, method_name, call_method(method_name))
+
+  def _add_bypass_route(self, klass, url):
+    # get all the available methods
+    methods = dict(inspect.getmembers(klass, predicate=inspect.ismethod))
+
+    def update_delete_bypass(ctx, **kwargs):
+      http_verb = request.args.get('method')
+
+      if http_verb == "update":
+        return ctx._orig_update(**kwargs)
+      elif http_verb == "delete":
+        return ctx._orig_delete(**kwargs)
+      else:
+        raise AttributeError("Method is neither update or delete")
+
+    # explicit put method in class
+    setattr(klass, "update_delete_bypass", update_delete_bypass)
+
+    def call_method(method_name):
+      instance = klass()
+
+      method = getattr(instance, method_name)
+
+      if hasattr(klass, "decorators"):
+        for d in klass.decorators:
+          method = d(method)
+
+      return method
+
+    method_name = "update_delete_bypass"
+
+    self.app.add_url_rule(url,
+                          "%s::%s" % (klass.__name__, method_name),
+                          call_method(method_name),
+                          methods=["POST"])
+
+    setattr(klass, "_orig_%s" % method_name, getattr(klass, method_name))
+    setattr(klass, method_name, call_method(method_name))
+
 
   def _add_nested_route(self, app, klass, parent_klasses):
     """
@@ -205,6 +247,8 @@ class ResourceBuilder(object):
 
     if "delete" not in klass.except_methods:
       self._add_route(klass, resource_base + "/<%s_id>" % entity_id, "delete", ["DELETE"])
+
+    self._add_bypass_route(klass, resource_base + "/<%s_id>" % entity_id)
 
   def _add_normal_route(self, app, klass):
     methods = dict(inspect.getmembers(klass, predicate=inspect.ismethod))

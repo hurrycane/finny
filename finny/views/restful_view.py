@@ -49,6 +49,9 @@ def serialize(func):
   def endpoint_method(*args, **kwargs):
     response = func(*args, **kwargs)
 
+    if isinstance(response, Response):
+      return response
+    
     return Response(json.dumps(response, cls=AlchemyEncoder),  mimetype='application/json')
 
   return endpoint_method
